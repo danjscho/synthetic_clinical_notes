@@ -132,7 +132,8 @@ class generate_patients():
         generate_patient_information = None,
         number_of_generations = None,
         bias_tests = None,
-        model = None
+        model = None,
+        validation_model = None,
     ):
         # Data
         self.names_df = names_df if names_df is not None else read_write_data(PARAMS["pipeline_config"]["patients_input_dataset"], "read")
@@ -142,6 +143,8 @@ class generate_patients():
         self.bias_tests = bias_tests if bias_tests is not None else PARAMS["pipeline_config"]["bias_testing"]
         # Model
         self.model = model if model is not None else PARAMS["pipeline_config"]["model"]
+        _vm = validation_model if validation_model is not None else PARAMS["pipeline_config"].get("validation_model")
+        self.validation_model = _vm if _vm is not None else self.model
         self.list_of_patients_df = None
         self.allergy_prevalence = CONFIG["allergy_prevalence"]
 
@@ -247,7 +250,8 @@ class generate_admissions():
         elective_admission_rate = None,
         novel_disease_rate = None,
         use_rare_admissions = None,
-        model = None
+        model = None,
+        validation_model = None,
     ):
         # Data
         self.patients = patients if patients is not None else read_write_data("intermediate_patients", "read")
@@ -266,6 +270,8 @@ class generate_admissions():
         self.novel_disease_rate = novel_disease_rate if novel_disease_rate is not None else PARAMS["pipeline_config"]["novel_disease_rate"]
         # Model
         self.model = model if model is not None else PARAMS["pipeline_config"]["model"]
+        _vm = validation_model if validation_model is not None else PARAMS["pipeline_config"].get("validation_model")
+        self.validation_model = _vm if _vm is not None else self.model
         # Initialise data
         self.emergency_admission_complaints = self.initialise_admission_data("emergency")
         self.elective_procedures = self.initialise_admission_data("procedure")
@@ -591,6 +597,7 @@ class generate_journeys():
         add_abbreviations_to_headings = None,
         filter_journey = None,
         model = None,
+        validation_model = None,
     ):
         # Params
         self.generate_patient_journey = generate_patient_journey if generate_patient_journey is not None else PARAMS["pipeline_config"]["generate_patient_journey"]
@@ -617,6 +624,8 @@ class generate_journeys():
                 self.use_intermediate_hospital_staff = False
         # Model
         self.model = model if model is not None else PARAMS["pipeline_config"]["model"]
+        _vm = validation_model if validation_model is not None else PARAMS["pipeline_config"].get("validation_model")
+        self.validation_model = _vm if _vm is not None else self.model
 
         self.resume = PARAMS["pipeline_config"].get("resume", False)
         self.list_of_staff_personas_df = None
@@ -960,8 +969,8 @@ class generate_journeys():
             validator_changes = {f"Patient_{i}" : 0 for i in range(len(simple_patient_journeys))}
             for validator_i in range(self.LLM_validator_iterations):
                 
-                validations = await self.validate_simple_patient_journeys(self.model, clean_journeys, patients_and_admissions)
-                clean_validations = clean_outputs(validations, "dictionary", self.model)
+                validations = await self.validate_simple_patient_journeys(self.validation_model, clean_journeys, patients_and_admissions)
+                clean_validations = clean_outputs(validations, "dictionary", self.validation_model)
                 validated_journeys = []
                 for journey_i, (validation, original_journey) in enumerate(zip(clean_validations, clean_journeys)):
                     if "changes" in validation and (validation["changes"] == True or validation["changes"] == "True"):
@@ -1185,6 +1194,7 @@ class generate_clinical_notes():
         simple_template_only = None,
         generate_clinical_notes = None,
         model = None,
+        validation_model = None,
     ):
         # Params
         self.TEST_MODE = TEST_MODE if TEST_MODE is not None else PARAMS["pipeline_config"]["TEST_MODE"]
@@ -1204,6 +1214,8 @@ class generate_clinical_notes():
         self.patients_and_admissions = combine_patients_and_admissions(self.patients, self.admissions)
         # Model
         self.model = model if model is not None else PARAMS["pipeline_config"]["model"]
+        _vm = validation_model if validation_model is not None else PARAMS["pipeline_config"].get("validation_model")
+        self.validation_model = _vm if _vm is not None else self.model
         self.resume = PARAMS["pipeline_config"].get("resume", False)
         self.final_patient_notes_df = None
 
@@ -1439,8 +1451,8 @@ class generate_clinical_notes():
                 logger.info("Validating Notes...")
                 all_changes = 0
                 for i in range(PARAMS["pipeline_config"]["LLM_validator_iterations_clinical_note"]):
-                    validated_notes = await self.validate_responses(self.model, notes, journey_row, patient_row, document_templates)
-                    clean_validated_notes = clean_outputs(validated_notes, "dictionary", self.model)
+                    validated_notes = await self.validate_responses(self.validation_model, notes, journey_row, patient_row, document_templates)
+                    clean_validated_notes = clean_outputs(validated_notes, "dictionary", self.validation_model)
                     clean_validated_notes, removed_ids = remove_failures(clean_validated_notes, replace_list = notes) # if note is a failure, replace with non-validated
                     if removed_ids:
                         logger.warning(f"Note {removed_ids} could not be validated in validator iteration {i} due to incorrect json compilation")

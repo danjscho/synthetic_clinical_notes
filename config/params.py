@@ -8,6 +8,7 @@ PARAMS = {
     "pipeline_config": {
         "TEST_MODE": False,  # If True, runs pipeline in test mode and generates one clinical note per patient
         "model": "qwen2.5:7b-ctx8k",  # The name of the LLM served by your local endpoint (e.g. "qwen2.5:32b" for Ollama, "Qwen/Qwen2.5-72B-Instruct-AWQ" for vLLM)
+        "validation_model": None,  # LLM model for validation steps. If None, uses "model" above for both generation and validation.
         "llm_concurrency": 4,  # Max concurrent LLM calls. Reduce for local models (2-4), increase for APIs (8-16)
         "llm_num_ctx": 8192,  # Context window size for LLM calls. Overrides the model default (e.g. 8192, 16384, 32768)
         "llm_max_tokens": 8192,  # Max tokens the model can generate per response (default Ollama: 4096)

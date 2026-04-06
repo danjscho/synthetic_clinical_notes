@@ -6,7 +6,8 @@ Usage:
 
 Options:
     --generations N      Number of patient journeys to generate (overrides params.py)
-    --model NAME         LLM model name served by the local endpoint (overrides params.py)
+    --model NAME              LLM model name served by the local endpoint (overrides params.py)
+    --validation-model NAME   LLM model for validation steps (overrides params.py, defaults to --model)
     --data-dir PATH      Directory to read input CSV files from (overrides config.py)
     --output-dir PATH    Directory to write output CSV files to (overrides config.py)
     --test-mode          Generate one clinical note per patient (overrides params.py)
@@ -28,6 +29,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Synthetic clinical notes pipeline")
     parser.add_argument("--generations", type=int, help="Number of patient journeys to generate")
     parser.add_argument("--model", type=str, help="LLM model name (must match what the server is serving)")
+    parser.add_argument("--validation-model", type=str, help="LLM model for validation steps (defaults to --model if not set)")
     parser.add_argument("--data-dir", type=str, help="Directory to read input CSV files from")
     parser.add_argument("--output-dir", type=str, help="Directory to write output CSV files to")
     parser.add_argument("--test-mode", action="store_true", help="Generate one clinical note per patient")
@@ -65,6 +67,8 @@ def apply_config_overrides(args):
         cfg.OUTPUT_DIR = args.output_dir
     if args.model:
         PARAMS["pipeline_config"]["model"] = args.model
+    if args.validation_model:
+        PARAMS["pipeline_config"]["validation_model"] = args.validation_model
     if args.generations:
         PARAMS["pipeline_config"]["number_of_generations"] = args.generations
     if args.test_mode:
